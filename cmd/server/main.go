@@ -2,36 +2,29 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"net"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"google.golang.org/grpc"
+	grpcProvider "watermap/cmd/server/providers/grpc"
+	httpProvider "watermap/cmd/server/providers/http"
 
 	"github.com/spf13/viper"
-
-	pb "watermap/gen/proto"
-	grpcSv "watermap/infrastructure/server/grpc"
 )
 
 func main() {
-	err := viper.ReadInConfig()
-	viper.SetConfigFile("config.yml")
+	viper.SetConfigFile("config.yaml")
 	viper.AddConfigPath(".")
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Println("config file not found, using OS env vars")
 	}
 
 	viper.AutomaticEnv()
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", viper.GetInt("grpc_port")))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	var opts []grpc.ServerOption
 
-	grpcServer := grpc.NewServer(opts...)
-	log.Println("Starting server Listen in port:", viper.GetInt("grpc_port"))
-	pb.RegisterGreeterServer(grpcServer, &grpcSv.Greeter{})
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("failed to start serve: %v", err)
-	}
+	fmt.Println("Starting server... grpc_port=", viper.Get("grpc_port"), " http_port=", viper.Get("http_port"))
+	go httpProvider.Provider().Serve()
+	go grpcProvider.Provider().Serve()
+	shutdown := make(chan os.Signal, 2)
+	signal.Notify(shutdown, syscall.SIGINT)
+	<-shutdown
 }

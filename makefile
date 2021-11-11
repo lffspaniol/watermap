@@ -8,7 +8,14 @@ build:
 	docker build  --target=release -t watermap:latest  .
 
 run:
-	docker run watermap:latest \
-		-p 8080:8080  \
+	docker run \
+		-e GIN_MODE=debug \
+		-e grpc_port=8080 \
+		-p 8080:8080 \
 		--expose 8080 \
-		-e grpc_port:8080
+		-e http_port=8081 \
+		-p 8081:8081 \
+		--expose 8081 \
+		watermap:latest
+		
+

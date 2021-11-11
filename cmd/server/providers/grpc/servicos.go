@@ -4,9 +4,11 @@ import (
 	"context"
 
 	pb "watermap/gen/proto"
+	"watermap/infrastructure/db"
 )
 
 type Greeter struct {
+	repository db.Repository
 	pb.UnimplementedGreeterServer
 }
 
